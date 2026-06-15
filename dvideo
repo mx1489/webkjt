@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Cloud Vault - คลังสื่อนวัตกรรมออนไลน์</title>
+    <!-- นำเข้า Tailwind CSS สำหรับสไตล์หน้าจอพรีเมียม -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;850&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Sarabun', sans-serif;
+      }
+      /* ปรับแต่งซ่อน Scrollbar สำหรับปุ่มหมวดหมู่ */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- ----------------- TOP NAVBAR ----------------- -->
+    <header class="border-b border-slate-900 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40 px-4 py-4 sm:px-6">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        
+        <!-- แบรนด์โลโก้คลังสื่อ -->
+        <div class="flex items-center gap-3">
+          <div class="bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-600/30">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+              Media Cloud Vault
+            </h1>
+            <p class="text-[10px] sm:text-xs text-slate-400 font-medium">ศูนย์บริการจัดเก็บและดาวน์โหลดสื่อนวัตกรรมองค์กร</p>
+          </div>
+        </div>
+
+        <!-- ปุ่มซิงค์ / ข้อมูลเชื่อมต่อ และไอคอนตั้งค่าแบบซ่อน (Admin Only) -->
+        <div class="flex items-center gap-2">
+          <div id="connectionStatus" class="hidden sm:flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-800 text-[11px] text-slate-400">
+            <span class="w-2 h-2 rounded-full bg-amber-500" id="statusIndicator"></span>
+            <span id="statusText">โหมดเดโมออฟไลน์</span>
+          </div>
+
+          <button onclick="syncWithCloud()" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-all" title="รีเฟรชข้อมูลคลาวด์ล่าสุด">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
+            </svg>
+          </button>
+
+          <!-- ไอคอนฟันเฟืองสำหรับแอดมินมาแปะ Web App URL แบบลับๆ -->
+          <button onclick="openConfigModal()" class="p-2 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-900 text-slate-500 hover:text-slate-300 transition-all" title="ตั้งค่าเชื่อมโยง Google API">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- ----------------- MAIN PORTAL ----------------- -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+      
+      <!-- ส่วนต้อนรับและคำแนะนำ -->
+      <div class="text-center space-y-3 py-4">
+        <h2 class="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+          ค้นพบและดาวน์โหลดสื่อนวัตกรรมคุณภาพสูง
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          ยินดีต้อนรับสู่พอร์ทัลสื่อนวัตกรรม คุณสามารถสืบค้น ค้นหา หรือแชร์ลิงก์ พร้อมทั้งกดดาวน์โหลดสื่อนวัตกรรมไฟล์ต้นฉบับดั้งเดิม (Original) แบบความละเอียดสูงสุด ไม่ลดทอนความละเอียด
+        </p>
+      </div>
+
+      <!-- ส่วนค้นหาและเครื่องมือกรอง (Search & Filters) -->
+      <div class="bg-slate-900/60 p-4 sm:p-6 rounded-3xl border border-slate-900 shadow-2xl backdrop-blur-md space-y-4">
+        
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+          
+          <!-- ช่องกรอกค้นหาข้อมูล -->
+          <div class="relative md:col-span-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-500 absolute left-3.5 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input 
+              type="text" 
+              id="searchBox"
+              oninput="handleSearch()"
+              placeholder="สืบค้นชื่อสื่อ, แท็กคำค้นหา, หรือรายละเอียดเพิ่มเติม..." 
+              class="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-850 rounded-2xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all text-sm sm:text-base"
+            />
+          </div>
+
+          <!-- ตัวเลือกประเภทสื่อ -->
+          <div class="relative md:col-span-3">
+            <select 
+              id="typeFilter"
+              onchange="handleFilterChange()"
+              class="w-full px-4 py-3.5 bg-slate-950 border border-slate-850 rounded-2xl text-slate-300 focus:outline-none appearance-none cursor-pointer text-sm font-semibold"
+            >
+              <option value="all">ชนิดสื่อทั้งหมด</option>
+              <option value="image">รูปภาพเท่านั้น (Images)</option>
+              <option value="video">วิดีโอเท่านั้น (Videos)</option>
+            </select>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500 absolute right-4 top-4.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+
+          <!-- สวิตช์สลับมุมมอง Grid / List -->
+          <div class="flex bg-slate-950 border border-slate-850 p-1 rounded-2xl md:col-span-3">
+            <button 
+              onclick="setViewMode('grid')"
+              id="btnViewGrid"
+              class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-white transition-all"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              ตาราง (Grid)
+            </button>
+            <button 
+              onclick="setViewMode('list')"
+              id="btnViewList"
+              class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-300 transition-all"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              รายการ (List)
+            </button>
+          </div>
+
+        </div>
+
+        <!-- ตัวสไลด์ประเภทหมวดหมู่หลัก (Category Pills) -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar">
+          <span class="text-[10px] sm:text-xs text-slate-500 font-extrabold uppercase tracking-wider mr-2 whitespace-nowrap">หมวดหมู่สื่อนวัตกรรม:</span>
+          <div id="categoryPillContainer" class="flex items-center gap-2">
+            <!-- หมวดหมู่แบบไดนามิกจะถูกใส่ที่นี่ -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ข้อความแจ้งความคืบหน้าการโหลด -->
+      <div id="loadingIndicator" class="hidden text-center py-12 space-y-3">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-650 border-t-transparent"></div>
+        <p class="text-sm text-indigo-400 font-semibold" id="loadingText">กำลังดึงข้อมูลล่าสุด...</p>
+      </div>
+
+      <!-- ส่วนการแสดงผลแกลเลอรีหลัก -->
+      <div id="mediaContainer">
+        <!-- ข้อมูลทั้งหมดจะถูกเรนเดอร์ผ่าน JavaScript ตรงนี้ -->
+      </div>
+
+    </main>
+
+    <!-- ----------------- FOOTER ----------------- -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-6 px-4 text-center text-xs text-slate-500 mt-12">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 font-sans">
+        <p>© 2026 Media Cloud Vault. ทุกไฟล์สื่อนวัตกรรมถูกจัดเก็บไว้บนความปลอดภัยระดับคลาวด์</p>
+        <div class="flex items-center gap-4">
+          <span class="hover:text-slate-300 cursor-pointer">พอร์ทัลดาวน์โหลดสิทธิ์เข้าใช้งานร่วมกัน</span>
+          <span>|</span>
+          <span class="font-bold text-slate-400">Original Resolution Guaranteed (100%)</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ----------------- LIGHTBOX PREVIEW MODAL ----------------- -->
+    <div id="lightboxModal" class="hidden fixed inset-0 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 lg:p-8 z-50 animate-in fade-in duration-200">
+      <div class="bg-slate-900 border border-slate-850 rounded-3xl w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]">
+        
+        <!-- ตัวพรีวิวรูปหรือวิดีโอเดโม -->
+        <div class="flex-1 bg-black flex items-center justify-center relative min-h-[250px] md:min-h-0">
+          <div id="lightboxMediaWrapper" class="w-full h-full flex items-center justify-center">
+            <!-- จะถูกเรนเดอร์ Image / Video Tag -->
+          </div>
+        </div>
+
+        <!-- รายละเอียดสื่อและการดาวน์โหลดในหน้า Lightbox -->
+        <div class="w-full md:w-80 border-t md:border-t-0 md:border-l border-slate-800 p-6 flex flex-col justify-between overflow-y-auto bg-slate-900/60 backdrop-blur-sm">
+          <div class="space-y-5">
+            
+            <div class="flex justify-between items-start">
+              <div>
+                <span id="lightboxCategory" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-950 border border-slate-800 text-slate-300">
+                  CATEGORY
+                </span>
+                <h3 id="lightboxTitle" class="font-bold text-white text-lg mt-2 leading-tight">MEDIA TITLE</h3>
+              </div>
+              <button onclick="closeLightbox()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="space-y-1">
+              <span class="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest block">คำอธิบายภาพ</span>
+              <p id="lightboxDescription" class="text-slate-300 text-xs leading-relaxed">คำบรรยายสื่อนวัตกรรม...</p>
+            </div>
+
+            <div class="space-y-1" id="lightboxTagSection">
+              <span class="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest block">แท็กสืบค้น</span>
+              <div id="lightboxTags" class="flex flex-wrap gap-1">
+                <!-- แท็กจะเรนเดอร์ที่นี่ -->
+              </div>
+            </div>
+
+            <div class="border-t border-slate-800/80 my-2"></div>
+
+            <div class="space-y-2">
+              <span class="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest block font-mono">Drive URL direct</span>
+              <div class="bg-slate-950 border border-slate-850 p-2.5 rounded-xl space-y-1">
+                <code id="lightboxUrlText" class="text-[10px] text-indigo-400 font-mono block select-all truncate">URL</code>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ปุ่มกระทำหลัก (Download & Share) -->
+          <div class="pt-6 space-y-2 mt-6">
+            <button 
+              id="lightboxDownloadBtn"
+              class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-2xl text-xs transition-colors shadow-lg shadow-emerald-600/20"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              ดาวน์โหลดต้นฉบับดั้งเดิม (ไม่ลดคุณภาพ)
+            </button>
+            
+            <button 
+              id="lightboxCopyBtn"
+              class="w-full flex items-center justify-center gap-2 bg-slate-850 hover:bg-slate-800 text-slate-300 font-semibold py-2.5 rounded-2xl text-xs transition-all border border-slate-750"
+            >
+              <span id="lightboxCopyText">คัดลอกลิงก์ CDN ตรง</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ----------------- CONFIG API MODAL (HIDDEN SETTING) ----------------- -->
+    <div id="configModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+        
+        <div class="p-6 border-b border-slate-800 bg-slate-950/40 flex justify-between items-center">
+          <h3 class="font-bold text-slate-100 flex items-center gap-2 text-sm sm:text-base">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            </svg>
+            กำหนดค่าการเชื่อมต่อคลาวด์
+          </h3>
+          <button onclick="closeConfigModal()" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <p class="text-xs text-slate-400 leading-relaxed font-sans">
+            ใส่ **Google Web App URL** ที่แอดมินสร้างจาก Google Apps Script ในฝั่ง Google Sheet เพื่อดึงพิกัดไฟล์และอัปเดตข้อมูลมัลติมีเดียโดยตรงในเวลาเดียวกัน
+          </p>
+
+          <div class="space-y-1.5">
+            <label class="text-xs text-slate-400 font-bold">Google Web App URL (Apps Script)</label>
+            <input 
+              type="url" 
+              id="inputWebAppUrl"
+              placeholder="https://script.google.com/macros/s/.../exec"
+              class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-350 focus:outline-none"
+            />
+          </div>
+
+          <div class="flex gap-3 pt-3">
+            <button onclick="closeConfigModal()" class="flex-1 bg-slate-950 hover:bg-slate-850 text-slate-400 py-2.5 rounded-xl border border-slate-850 text-xs font-semibold">
+              ยกเลิก
+            </button>
+            <button onclick="saveConfig()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/20">
+              บันทึกการเชื่อมต่อ
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ----------------- CUSTOM NOTIFICATION ALERT ----------------- -->
+    <div id="customAlert" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-100">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
+        <div class="p-6 space-y-4 text-center">
+          <div class="inline-flex p-3 rounded-full bg-indigo-950/80 text-indigo-400 border border-indigo-900/40 mb-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 id="alertTitle" class="font-bold text-slate-100 text-sm sm:text-base">TITLE</h3>
+          <p id="alertMessage" class="text-xs text-slate-400 leading-relaxed font-sans">MESSAGE</p>
+          <button onclick="closeCustomAlert()" class="w-full bg-slate-850 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs border border-slate-750 transition-all">
+            เข้าใจแล้ว
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ----------------- JAVASCRIPT PROGRAMMING ----------------- -->
+    <script>
+      // ชุดข้อมูลจำลองเริ่มต้นสำหรับแสดงความสวยงามทันทีก่อนเชื่อม Google Sheets จริง
+      const mockData = [
+        {
+          id: "1",
+          title: "ภูเขาและหมอกยามเช้า",
+          category: "Nature",
+          type: "image",
+          url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+          driveId: "1A2B3C4D5E_mock_image_1",
+          description: "ภาพถ่ายทิวทัศน์ภูเขาสลับซับซ้อนในม่านหมอกยามเช้า สำหรับใช้เป็นพื้นหลังหน้าแรก",
+          tags: ["nature", "mountain", "background"],
+          createdAt: "2026-06-10"
+        },
+        {
+          id: "2",
+          title: "วิดีโอน้ำตกในป่าลึก",
+          category: "Video Asset",
+          type: "video",
+          url: "https://assets.mixkit.co/videos/preview/mixkit-rocky-stream-in-the-forest-362-large.mp4",
+          driveId: "1A2B3C4D5E_mock_video_1",
+          description: "ฟุตเทจวิดีโอน้ำตกขนาดเล็ก ไหลผ่านโขดหิน ลูปวิดีโอธรรมชาติ",
+          tags: ["waterfall", "nature", "video", "loop"],
+          createdAt: "2026-06-12"
+        },
+        {
+          id: "3",
+          title: "การออกแบบแอปพลิเคชันการเงิน",
+          category: "UI Design",
+          type: "image",
+          url: "https://images.unsplash.com/photo-1541462608141-2758a6e4852f?auto=format&fit=crop&w=1200&q=80",
+          driveId: "1A2B3C4D5E_mock_image_2",
+          description: "หน้าจอ UI Dashboard สไตล์มินิมอล แสดงกราฟการเงินและยอดเงินคงเหลือ",
+          tags: ["ui", "ux", "dashboard", "finance"],
+          createdAt: "2026-06-13"
+        },
+        {
+          id: "4",
+          title: "ตึกสูงระฟ้าสไตล์โมเดิร์น",
+          category: "Architecture",
+          type: "image",
+          url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80",
+          driveId: "1A2B3C4D5E_mock_image_3",
+          description: "ภาพมุมต่ำสะท้อนเงาท้องฟ้าบนกระจกอาคารสำนักงานใจกลางเมืองหลวง",
+          tags: ["building", "modern", "city", "glass"],
+          createdAt: "2026-06-14"
+        }
+      ];
+
+      // สถานะแอปพลิเคชัน (App States)
+      let mediaItems = [];
+      let currentViewMode = "grid"; // grid | list
+      let selectedCategory = "All";
+      let selectedType = "all";
+      let webAppUrl = "";
+
+      // เริ่มทำงานเบื้องแรก
+      window.onload = function() {
+        // โหลด API URL จาก localStorage
+        webAppUrl = localStorage.getItem('downloader_web_app_url') || "";
+        document.getElementById('inputWebAppUrl').value = webAppUrl;
+
+        // ดึงข้อมูลในเครื่องที่จำลองไว้มาโชว์ก่อน
+        const savedMedia = localStorage.getItem('drive_sheet_media');
+        mediaItems = savedMedia ? JSON.parse(savedMedia) : mockData;
+
+        updateConnectionUI();
+        renderCategories();
+        renderMedia();
+
+        // ซิงค์อัตโนมัติหากมีการเก็บ API URL ปลายทางไว้
+        if (webAppUrl) {
+          syncWithCloud();
+        }
+      };
+
+      // อัปเดต UI หน้าจอสถานะออนไลน์/ออฟไลน์
+      function updateConnectionUI() {
+        const container = document.getElementById('connectionStatus');
+        const indicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+
+        container.classList.remove('hidden');
+        if (webAppUrl) {
+          indicator.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+          statusText.innerText = "เชื่อมต่อระบบ Cloud Sheet แล้ว";
+        } else {
+          indicator.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
+          statusText.innerText = "จำลองจัดเก็บชั่วคราว (Offline)";
+        }
+      }
+
+      // ดึงข้อมูลจริงจาก Apps Script API
+      async function syncWithCloud() {
+        if (!webAppUrl) {
+          showNotification('แนะนำการเชื่อมโยง', 'คุณสามารถแชร์พอร์ทัลดาวน์โหลดนี้ให้แก่เพื่อนร่วมงานได้ โดยการคลิกไอคอนฟันเฟืองด้านขวาบนเพื่อทำการผูกกับ Apps Script ขององค์กรเพื่อเปิดดึงฐานข้อมูลจริงแบบไร้รอยต่อ', 'info');
+          return;
+        }
+
+        const loader = document.getElementById('loadingIndicator');
+        loader.classList.remove('hidden');
+        document.getElementById('loadingText').innerText = 'กำลังเชื่อมต่อฐานข้อมูล Google Sheets...';
+
+        try {
+          const response = await fetch(`${webAppUrl}?action=get`);
+          const result = await response.json();
+
+          if (result && Array.isArray(result)) {
+            mediaItems = result;
+            localStorage.setItem('drive_sheet_media', JSON.stringify(result));
+            renderCategories();
+            renderMedia();
+            showNotification('ซิงค์ข้อมูลสมบูรณ์!', 'ดึงพิกัดไฟล์ภาพและวิดีโอล่าสุดจากตารางประวัติ Google Sheet สำเร็จเรียบร้อย', 'success');
+          } else {
+            showNotification('โครงสร้างไม่ถูกต้อง', 'โครงสร้างตารางข้อมูลที่ดึงมาไม่เข้ากันกับระบบนี้', 'error');
+          }
+        } catch (err) {
+          console.error(err);
+          showNotification('ขัดข้องในการซิงค์', 'เกิดข้อผิดพลาดด้านเครือข่าย กรุณาตรวจสอบว่าคุณได้ Deploy Google App Script แบบสิทธิ์ "Everyone (ทุกคน)" แล้วหรือไม่', 'error');
+        } finally {
+          loader.classList.add('hidden');
+        }
+      }
+
+      // สร้างรายชื่อปุ่มหมวดหมู่ไดนามิก
+      function renderCategories() {
+        const container = document.getElementById('categoryPillContainer');
+        const listCategories = ['All', ...new Set(mediaItems.map(item => item.category))];
+        
+        container.innerHTML = "";
+        listCategories.forEach(cat => {
+          const activeClass = selectedCategory === cat 
+            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-650/25" 
+            : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-850";
+            
+          container.innerHTML += `
+            <button 
+              onclick="selectCategory('${cat}')" 
+              class="px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${activeClass}"
+            >
+              ${cat}
+            </button>
+          `;
+        });
+      }
+
+      // ดำเนินการกรองหมวดหมู่เมื่อคลิก
+      function selectCategory(cat) {
+        selectedCategory = cat;
+        renderCategories();
+        renderMedia();
+      }
+
+      function handleSearch() {
+        renderMedia();
+      }
+
+      function handleFilterChange() {
+        selectedType = document.getElementById('typeFilter').value;
+        renderMedia();
+      }
+
+      function setViewMode(mode) {
+        currentViewMode = mode;
+        const btnGrid = document.getElementById('btnViewGrid');
+        const btnList = document.getElementById('btnViewList');
+
+        if (mode === 'grid') {
+          btnGrid.className = "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-white transition-all";
+          btnList.className = "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-350 transition-all";
+        } else {
+          btnGrid.className = "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-355 transition-all";
+          btnList.className = "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-white transition-all";
+        }
+        renderMedia();
+      }
+
+      // ดาวน์โหลดไฟล์ไม่ลดความละเอียด
+      function startDownload(id, driveId, url, title) {
+        let downloadUrl = url;
+        if (driveId && !driveId.includes('mock')) {
+          downloadUrl = `https://drive.google.com/uc?export=download&id=${driveId}`;
+        }
+        
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.target = '_blank';
+        link.setAttribute('download', title || 'media-download');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      // สั่งก็อปปี้ลิงก์
+      function copyItemLink(text, id) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          showNotification('คัดลอกสำเร็จแล้ว!', 'ลิงก์ตรงสำหรับดาวน์โหลดสื่อนวัตกรรมถูกบันทึกในคลิปบอร์ดแล้ว', 'success');
+        } catch (err) {
+          console.error(err);
+        }
+        document.body.removeChild(textArea);
+      }
+
+      // เรนเดอร์การแสดงผลแกลเลอรี
+      function renderMedia() {
+        const container = document.getElementById('mediaContainer');
+        const searchVal = document.getElementById('searchBox').value.toLowerCase();
+
+        // คัดกรอง
+        const items = mediaItems.filter(item => {
+          const matchesSearch = item.title.toLowerCase().includes(searchVal) || 
+                                (item.description && item.description.toLowerCase().includes(searchVal)) ||
+                                (item.tags && item.tags.some(t => t.toLowerCase().includes(searchVal)));
+          const matchesCat = selectedCategory === 'All' || item.category === selectedCategory;
+          const matchesType = selectedType === 'all' || item.type === selectedType;
+
+          return matchesSearch && matchesCat && matchesType;
+        });
+
+        if (items.length === 0) {
+          container.innerHTML = `
+            <div class="bg-slate-900/40 border border-slate-900 rounded-3xl p-12 text-center max-w-sm mx-auto space-y-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-slate-700 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2" />
+              </svg>
+              <h3 class="font-bold text-slate-300">ไม่พบสื่อนวัตกรรมในระบบ</h3>
+              <p class="text-xs text-slate-500">ทดลองสืบค้นหมวดหมู่หรือหัวข้ออื่นเพื่อตรวจสอบไฟล์ใหม่อีกครั้ง</p>
+            </div>
+          `;
+          return;
+        }
+
+        if (currentViewMode === 'grid') {
+          // เรนเดอร์แบบ GRID
+          let html = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">`;
+          items.forEach(item => {
+            const isVideo = item.type === 'video';
+            const tagsHtml = item.tags ? item.tags.map(t => `<span class="text-[10px] bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-850">#${t}</span>`).join('') : '';
+            
+            html += `
+              <div class="group bg-slate-900 border border-slate-850/80 rounded-2xl overflow-hidden shadow-lg flex flex-col justify-between hover:border-slate-700 hover:-translate-y-1 transition-all duration-300">
+                
+                <div class="relative aspect-video bg-slate-950 overflow-hidden cursor-pointer" onclick="openLightbox(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                  ${isVideo 
+                    ? `<video src="${item.url}" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" muted></video>` 
+                    : `<img src="${item.url}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" />`
+                  }
+                  <span class="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-800 ${isVideo ? 'text-sky-400':'text-indigo-400'}">
+                    ${isVideo ? 'Video':'Image'}
+                  </span>
+                  <span class="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur-md text-slate-300 text-[10px] font-bold px-2.5 py-1 rounded-lg">
+                    ${item.category}
+                  </span>
+                </div>
+
+                <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div class="space-y-1.5">
+                    <h3 class="font-bold text-slate-100 group-hover:text-indigo-400 transition-colors line-clamp-1 text-sm sm:text-base">${item.title}</h3>
+                    <p class="text-slate-400 text-xs line-clamp-2 leading-relaxed">${item.description || 'ไม่มีรายละเอียดอธิบายเกี่ยวกับชิ้นงานสื่อนวัตกรรมนี้'}</p>
+                  </div>
+
+                  <div class="flex flex-wrap gap-1">${tagsHtml}</div>
+
+                  <div class="border-t border-slate-850 pt-3.5 flex items-center justify-between">
+                    <span class="text-[9px] text-slate-500 font-semibold">${item.createdAt || 'ไม่ระบุวันที่'}</span>
+                    
+                    <div class="flex items-center gap-1">
+                      <!-- ปุ่มดาวน์โหลดคุณภาพตรง -->
+                      <button 
+                        onclick="startDownload('${item.id}', '${item.driveId}', '${item.url}', '${item.title}')"
+                        class="p-2 rounded-xl bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-800/50 text-emerald-300 transition-all"
+                        title="ดาวน์โหลดความละเอียดแท้ไม่ลดคุณภาพ"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      </button>
+
+                      <button 
+                        onclick="copyItemLink('${item.url}', '${item.id}')"
+                        class="p-2 rounded-xl bg-slate-950 hover:bg-slate-850 border border-slate-850 text-slate-400 hover:text-white transition-all"
+                        title="คัดลอกลิงก์มีเดียเพื่อแชร์ต่อ"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                      </button>
+
+                      <button 
+                        onclick='openLightbox(${JSON.stringify(item).replace(/"/g, '&quot;')})'
+                        class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold rounded-xl transition-all"
+                      >
+                        ตรวจสอบ
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            `;
+          });
+          html += `</div>`;
+          container.innerHTML = html;
+        } else {
+          // เรนเดอร์แบบ LIST (รายการรายละเอียด)
+          let html = `
+            <div class="bg-slate-900 border border-slate-850 rounded-3xl overflow-hidden shadow-2xl">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr class="bg-slate-950/60 border-b border-slate-850 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                      <th class="p-4">รูปตัวอย่าง</th>
+                      <th class="p-4">สื่อนวัตกรรม</th>
+                      <th class="p-4">หมวดหมู่</th>
+                      <th class="p-4">ประเภท</th>
+                      <th class="p-4">วันที่บันทึก</th>
+                      <th class="p-4 text-right">ดาวน์โหลดต้นฉบับดั้งเดิม</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-850">
+          `;
+          items.forEach(item => {
+            const isVideo = item.type === 'video';
+            html += `
+              <tr class="hover:bg-slate-850/20 transition-all">
+                <td class="p-4">
+                  <div class="w-20 aspect-video rounded-xl overflow-hidden bg-slate-950 relative cursor-pointer" onclick='openLightbox(${JSON.stringify(item).replace(/"/g, '&quot;')})'>
+                    ${isVideo 
+                      ? `<video src="${item.url}" class="w-full h-full object-cover"></video>` 
+                      : `<img src="${item.url}" alt="" class="w-full h-full object-cover" />`
+                    }
+                  </div>
+                </td>
+                <td class="p-4">
+                  <h4 class="font-bold text-slate-200">${item.title}</h4>
+                  <p class="text-slate-450 text-xs truncate max-w-xs">${item.description || 'ไม่มีบรรยายเพิ่มเติม'}</p>
+                </td>
+                <td class="p-4">
+                  <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-950 border border-slate-850 text-slate-300">
+                    ${item.category}
+                  </span>
+                </td>
+                <td class="p-4">
+                  <span class="text-xs ${isVideo ? 'text-sky-400':'text-indigo-400'} font-semibold inline-flex items-center gap-1.5">
+                    ${isVideo ? 'วิดีโอ':'รูปภาพ'}
+                  </span>
+                </td>
+                <td class="p-4 text-slate-500 text-xs">${item.createdAt || 'ไม่ระบุ'}</td>
+                <td class="p-4 text-right">
+                  <div class="flex items-center justify-end gap-1.5">
+                    <button 
+                      onclick="startDownload('${item.id}', '${item.driveId}', '${item.url}', '${item.title}')"
+                      class="px-3 py-1.5 bg-emerald-950/65 text-emerald-300 border border-emerald-900/50 hover:bg-emerald-900 text-xs font-bold rounded-xl transition-all"
+                    >
+                      Download (100%)
+                    </button>
+                    <button 
+                      onclick="copyItemLink('${item.url}', '${item.id}')"
+                      class="p-2 bg-slate-950 hover:bg-slate-850 border border-slate-850 text-slate-400 rounded-xl"
+                    >
+                      คัดลอกลิงก์
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          });
+          html += `</tbody></table></div></div>`;
+          container.innerHTML = html;
+        }
+      }
+
+      // เปิดหน้าตรวจสอบ Lightbox ชิ้นใหญ่
+      function openLightbox(item) {
+        const modal = document.getElementById('lightboxModal');
+        const mediaWrapper = document.getElementById('lightboxMediaWrapper');
+        
+        document.getElementById('lightboxCategory').innerText = item.category.toUpperCase();
+        document.getElementById('lightboxTitle').innerText = item.title;
+        document.getElementById('lightboxDescription').innerText = item.description || "ไม่มีคำบรรยายสื่อนวัตกรรมนี้เพิ่มเติม";
+        document.getElementById('lightboxUrlText').innerText = item.url;
+        
+        // เคลียร์และสร้างแท็ก
+        const tagsContainer = document.getElementById('lightboxTags');
+        const tagSection = document.getElementById('lightboxTagSection');
+        tagsContainer.innerHTML = "";
+        
+        if (item.tags && item.tags.length > 0) {
+          tagSection.classList.remove('hidden');
+          item.tags.forEach(t => {
+            tagsContainer.innerHTML += `<span class="text-[10px] bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-800">#${t}</span>`;
+          });
+        } else {
+          tagSection.classList.add('hidden');
+        }
+
+        // แทรก Tag ภาพนิ่งหรือวิดีโอ
+        if (item.type === 'video') {
+          mediaWrapper.innerHTML = `<video src="${item.url}" class="max-w-full max-h-[50vh] md:max-h-[80vh]" controls autoplay></video>`;
+        } else {
+          mediaWrapper.innerHTML = `<img src="${item.url}" alt="" class="max-w-full max-h-[50vh] md:max-h-[80vh] object-contain" />`;
+        }
+
+        // จัดเตรียมปุ่มดาวน์โหลด/ก๊อปปี้ลิงก์
+        const dlBtn = document.getElementById('lightboxDownloadBtn');
+        dlBtn.onclick = function() {
+          startDownload(item.id, item.driveId, item.url, item.title);
+        };
+
+        const copyBtn = document.getElementById('lightboxCopyBtn');
+        const copyText = document.getElementById('lightboxCopyText');
+        copyText.innerText = "คัดลอกลิงก์ตรงเพื่อแชร์";
+        
+        copyBtn.onclick = function() {
+          const textArea = document.createElement("textarea");
+          textArea.value = item.url;
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            copyText.innerText = "คัดลอกลิงก์สำเร็จแล้ว!";
+            setTimeout(() => { copyText.innerText = "คัดลอกลิงก์ตรงเพื่อแชร์"; }, 2000);
+          } catch (err) {
+            console.error(err);
+          }
+          document.body.removeChild(textArea);
+        };
+
+        modal.classList.remove('hidden');
+      }
+
+      function closeLightbox() {
+        document.getElementById('lightboxModal').classList.add('hidden');
+        document.getElementById('lightboxMediaWrapper').innerHTML = "";
+      }
+
+      // ระบบตั้งค่า API Web App สำหรับแอดมินมาเชื่อมโยงข้อมูล
+      function openConfigModal() {
+        document.getElementById('configModal').classList.remove('hidden');
+      }
+
+      function closeConfigModal() {
+        document.getElementById('configModal').classList.add('hidden');
+      }
+
+      function saveConfig() {
+        const urlInput = document.getElementById('inputWebAppUrl').value.trim();
+        webAppUrl = urlInput;
+        localStorage.setItem('downloader_web_app_url', urlInput);
+        closeConfigModal();
+        updateConnectionUI();
+        
+        if (urlInput) {
+          syncWithCloud();
+        } else {
+          mediaItems = mockData;
+          localStorage.removeItem('drive_sheet_media');
+          renderCategories();
+          renderMedia();
+          showNotification('เปลี่ยนเป็นโหมดออฟไลน์', 'ระบบสลับฐานข้อมูลกลับเข้าสู่โหมดจำลองในอุปกรณ์นี้เรียบร้อยแล้ว', 'info');
+        }
+      }
+
+      // แจ้งเตือนแบบ Custom (สวยงามและปลอดภัยบน Sandbox iFrame)
+      function showNotification(title, message, type = 'info') {
+        document.getElementById('alertTitle').innerText = title;
+        document.getElementById('alertMessage').innerText = message;
+        document.getElementById('customAlert').classList.remove('hidden');
+      }
+
+      function closeCustomAlert() {
+        document.getElementById('customAlert').classList.add('hidden');
+      }
+    </script>
+
+  </body>
+</html>
